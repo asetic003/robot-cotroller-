@@ -297,19 +297,21 @@
             font-weight: bold;
             min-width: 50px;
         }
-
         .cutter-btn {
-            padding: 15px 30px;
-            border: 2px solid #000; /* Black border */
-            border-radius: 15px;
-            font-size: 16px;
+            /* Converted px values to vh for scaling */
+            padding: 1.5vh 3vh;   /* Was 15px 30px */
+            border: 0.3vh solid #000; /* Was 2px */
+            border-radius: 1.5vh;   /* Was 15px */
+            font-size: 2.5vh;     /* Was 16px */
+            
+            /* Unchanged properties */
             font-weight: bold;
             cursor: pointer;
             background: #fff; /* White background */
             color: #000; /* Black text */
             transition: all 0.3s;
         }
-
+        
         /* Invert colors when active */
         .cutter-btn.active {
             background: #000;
