@@ -432,6 +432,8 @@
         let cutterOn = false;
         let nodeIP = '';
         let currentPower = 50;
+        let turningFactor = 0.6; // 0.0 = no turning, 1.0 = sharp turn
+
         let leftMotorSpeed = 0;
         let rightMotorSpeed = 0;
         
@@ -510,24 +512,50 @@
             if (rightPressed) turn = 100;
 
             const powerMultiplier = currentPower / 100;
-            
-            // Differential steering calculation
-            leftMotorSpeed = Math.round((forward + turn) * powerMultiplier);
-            rightMotorSpeed = Math.round((forward - turn) * powerMultiplier);
-            
-            // Clamp values between -100 and 100
+            let left = 0;
+            let right = 0;
+
+            // --- Smooth differential steering ---
+            if (forward !== 0) {
+                // Moving forward or backward with optional turn
+                if (turn === 0) {
+                    left = right = forward; // straight
+                } else if (turn > 0) {
+                    // turning right
+                    left = forward;
+                    right = forward * (1 - turningFactor);
+                } else if (turn < 0) {
+                    // turning left
+                    left = forward * (1 - turningFactor);
+                    right = forward;
+                }
+            } else if (turn !== 0) {
+                // In-place turning (no forward motion)
+                left = turn;
+                right = -turn;
+            } else {
+                // stop
+                left = right = 0;
+            }
+        
+            // Apply power scaling
+            leftMotorSpeed = Math.round(left * powerMultiplier);
+            rightMotorSpeed = Math.round(right * powerMultiplier);
+        
+            // Clamp values
             leftMotorSpeed = Math.max(-100, Math.min(100, leftMotorSpeed));
             rightMotorSpeed = Math.max(-100, Math.min(100, rightMotorSpeed));
-            
+        
             // Update display
             document.getElementById('leftMotor').textContent = leftMotorSpeed + '%';
             document.getElementById('rightMotor').textContent = rightMotorSpeed + '%';
-            
+        
             const avgSpeed = Math.abs(Math.round((leftMotorSpeed + rightMotorSpeed) / 2));
             document.getElementById('speedDisplay').textContent = avgSpeed + '%';
-            
+        
             sendCommand();
-        }
+}       
+
 
         const powerSlider = document.getElementById('powerSlider');
         const powerValue = document.getElementById('powerValue');
