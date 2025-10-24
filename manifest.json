@@ -2,7 +2,7 @@
   "name": "Robot Controller",
   "short_name": "Robot",
   "description": "Control your 4-wheeled robot with cutter",
-  "start_url": "/index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#FFFFFF",
