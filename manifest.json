@@ -4,8 +4,8 @@
   "description": "Control your 4-wheeled robot with cutter",
   "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#667eea",
-  "theme_color": "#667eea",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
   "orientation": "landscape",
   "icons": [
     {

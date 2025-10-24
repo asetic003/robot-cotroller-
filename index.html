@@ -6,13 +6,14 @@
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#667eea">
+    <meta name="theme-color" content="#FFFFFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Robot">
     <link rel="manifest" href="manifest.json">
     <title>Robot Controller</title>
     <style>
+        /* --- NEW THEME --- */
         * {
             margin: 0;
             padding: 0;
@@ -22,11 +23,11 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background:  rgba(255, 255, 255, 0.952);
+            background: #FFFFFF; /* Plain white */
             height: 100vh;
             display: flex;
             flex-direction: column;
-            color: white;
+            color: #000000; /* Plain black text */
             touch-action: none;
             overflow: hidden;
         }
@@ -45,13 +46,13 @@
         }
 
         .setup-content {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            /* Removed background and blur */
             padding: 30px;
             border-radius: 20px;
             max-width: 400px;
             width: 100%;
             text-align: center;
+            border: 3px solid #000; /* Added border */
         }
 
         .setup-content h1 {
@@ -67,10 +68,12 @@
         .ip-input {
             width: 100%;
             padding: 15px;
-            border: none;
+            border: 2px solid #000; /* Simple border */
             border-radius: 10px;
             font-size: 18px;
             margin-bottom: 15px;
+            background: #fff;
+            color: #000;
         }
 
         .connect-btn {
@@ -80,8 +83,8 @@
             border-radius: 10px;
             font-size: 18px;
             font-weight: bold;
-            background: white;
-            color: #667eea;
+            background: #000; /* Inverted for primary action */
+            color: #fff;
             cursor: pointer;
         }
 
@@ -108,8 +111,8 @@
             justify-content: space-between;
             align-items: center;
             padding: 1vh 2vw;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
+            /* Removed background and blur */
+            border-bottom: 2px solid #000; /* Added border */
             z-index: 100;
             height: 8vh;
         }
@@ -118,7 +121,7 @@
             display: flex;
             align-items: center;
             gap: 0.5vw;
-            background: rgba(255, 255, 255, 0.2);
+            /* Removed background */
             padding: 0.8vh 1.5vw;
             border-radius: 20px;
             font-size: 1.8vh;
@@ -128,16 +131,16 @@
             width: 1vh;
             height: 1vh;
             border-radius: 50%;
-            background: #44ff44;
+            background: #000; /* Changed to black */
             animation: pulse 2s infinite;
         }
 
         .disconnect-btn {
             padding: 0.8vh 2vw;
-            border: none;
+            border: 2px solid #000; /* Simple border */
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
+            background: #fff;
+            color: #000;
             font-weight: bold;
             cursor: pointer;
             font-size: 1.8vh;
@@ -157,7 +160,7 @@
             font-size: 6vh;
             font-weight: bold;
             margin-bottom: 1vh;
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.5);
+            /* Removed text shadow */
         }
 
         .motor-status {
@@ -168,15 +171,16 @@
         }
 
         .motor-info {
-            background: rgba(0, 0, 0, 0.3);
+            /* Removed background and blur */
             padding: 1vh 2vw;
             border-radius: 10px;
-            backdrop-filter: blur(10px);
+            border: 2px solid #000; /* Added border */
         }
 
         .motor-label {
             font-size: 1.5vh;
-            opacity: 0.8;
+            opacity: 1;
+            color: #333; /* Dark gray */
         }
 
         .motor-value {
@@ -206,37 +210,28 @@
         .control-btn {
             width: 120px;
             height: 120px;
-            border: none;
+            border: 3px solid #000; /* Strong border */
             border-radius: 20px;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            color: white;
+            background: #fff; /* White fill */
+            /* Removed backdrop-filter */
+            color: #000; /* Black icon/text */
             font-size: 48px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.1s;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            /* Removed box-shadow */
             display: flex;
             align-items: center;
             justify-content: center;
             user-select: none;
         }
 
-        .control-btn:active {
-            transform: scale(0.95);
-            background: rgba(255, 255, 255, 0.5);
-        }
-
+        /* Invert colors when pressed */
+        .control-btn:active,
         .control-btn.pressed {
-            background: rgba(255, 255, 255, 0.6);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
-        .button-label {
-            position: absolute;
-            font-size: 14px;
-            opacity: 0.7;
-            font-weight: normal;
+            transform: scale(0.95);
+            background: #000;
+            color: #fff;
         }
 
         .bottom-controls {
@@ -248,8 +243,8 @@
             justify-content: space-around;
             align-items: center;
             padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(10px);
+            /* Removed background and blur */
+            border-top: 2px solid #000; /* Added border */
         }
 
         .power-control {
@@ -270,8 +265,9 @@
             height: 35px;
             -webkit-appearance: none;
             appearance: none;
-            background: rgba(255, 255, 255, 0.2);
+            background: #eee; /* Light gray track */
             border-radius: 20px;
+            border: 2px solid #000; /* Black border */
             outline: none;
         }
 
@@ -280,20 +276,20 @@
             appearance: none;
             width: 30px;
             height: 30px;
-            background: white;
+            background: #000; /* Black thumb */
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            /* Removed box-shadow */
         }
 
         .power-slider::-moz-range-thumb {
             width: 30px;
             height: 30px;
-            background: white;
+            background: #000; /* Black thumb */
             border-radius: 50%;
             cursor: pointer;
             border: none;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            /* Removed box-shadow */
         }
 
         .power-value {
@@ -304,19 +300,21 @@
 
         .cutter-btn {
             padding: 15px 30px;
-            border: none;
+            border: 2px solid #000; /* Black border */
             border-radius: 15px;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            background: rgba(255, 255, 255, 0.3);
-            color: white;
+            background: #fff; /* White background */
+            color: #000; /* Black text */
             transition: all 0.3s;
         }
 
+        /* Invert colors when active */
         .cutter-btn.active {
-            background: #ff4444;
-            box-shadow: 0 5px 20px rgba(255, 68, 68, 0.5);
+            background: #000;
+            color: #fff;
+            /* Removed box-shadow */
         }
 
         .cutter-btn:active {
@@ -337,7 +335,8 @@
                 left: 0;
                 right: 0;
                 bottom: 0;
-                background: rgba(0, 0, 0, 0.95);
+                background: #fff; /* White background */
+                color: #000; /* Black text */
                 justify-content: center;
                 align-items: center;
                 z-index: 1000;
@@ -362,6 +361,7 @@
     </style>
 </head>
 <body>
+    
     <div class="portrait-warning">
         <div class="icon">📱</div>
         <h2>Please rotate your device</h2>
