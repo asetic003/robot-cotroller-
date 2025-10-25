@@ -697,23 +697,14 @@
       }
       
       function sendCommand() {
-          if (!connected) return;
-          
-          const data = {
-              leftMotor: leftMotorSpeed,
-              rightMotor: rightMotorSpeed,
-              power: currentPower,
-              cutter: cutterOn ? 1 : 0
-          };
-          
-          fetch(`http://${nodeIP}/control`, {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(data)
-          }).catch(err => console.log('Error:', err));
-      }
+        if (!connected) return;
+        const data = { leftMotor, rightMotor, power: currentPower, cutter: cutterOn?1:0 };
+        fetch(`http://${nodeIP}/control`, {      // ← keep “http:” explicit
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        }).catch(()=>{/*silent*/});
+        }       
       
       // Prevent accidental page navigation
       document.addEventListener('touchmove', (e) => {
