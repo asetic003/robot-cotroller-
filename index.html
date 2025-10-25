@@ -92,6 +92,11 @@
             transform: scale(0.98);
         }
 
+        .connect-btn:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
         .control-screen {
             display: none;
             height: 100vh;
@@ -133,6 +138,12 @@
             border-radius: 50%;
             background: #40a351f1; /* Changed to black */
             animation: pulse 2s infinite;
+        }
+
+        /* --- NEW --- Added disconnected state */
+        .status-dot.disconnected {
+            background: #e03c3c; /* Red */
+            animation: none;
         }
 
         .disconnect-btn {
@@ -405,7 +416,7 @@
             <h1>🤖 Robot Controller</h1>
             <p>Enter your NodeMCU IP address to connect</p>
             <input type="text" class="ip-input" id="ipInput" placeholder="192.168.1.100" value="192.168.1.100">
-            <button class="connect-btn" onclick="connect()">Connect & Start</button>
+            <button class="connect-btn" id="connectBtn" onclick="connect()">Connect & Start</button>
         </div>
     </div>
 
@@ -484,6 +495,12 @@
       let accelerationRate = 3; // How fast to accelerate (units per frame)
       let decelerationRate = 5; // How fast to decelerate (units per frame)
       let accelerationInterval = null;
+
+      // --- NEW --- Heartbeat variables
+      let heartbeatInterval = null;
+      const statusDot = document.querySelector('.status-dot');
+      const ipDisplay = document.getElementById('ipDisplay');
+      // --- END NEW ---
           
       const buttons = {
           forward: document.getElementById('forwardBtn'),
@@ -520,8 +537,10 @@
           });
       
           button.addEventListener('mouseleave', (e) => {
-              button.classList.remove('pressed');
-              onRelease();
+              if (button.classList.contains('pressed')) {
+                button.classList.remove('pressed');
+                onRelease();
+              }
           });
       }
       
@@ -647,22 +666,51 @@
           updateMotors();
       });
       
-      function connect() {
+      // --- MODIFIED --- Connect function now pings server
+      async function connect() {
           const ip = document.getElementById('ipInput').value.trim();
           if (!ip) {
               alert('Please enter an IP address');
               return;
           }
-          nodeIP = ip;
-          connected = true;
-          document.getElementById('ipDisplay').textContent = ip;
-          document.getElementById('setupScreen').classList.add('hidden');
-          document.getElementById('controlScreen').classList.add('active');
+
+          const connectBtn = document.getElementById('connectBtn');
+          connectBtn.disabled = true;
+          connectBtn.textContent = 'Connecting...';
+
+          try {
+              // Ping the server's root URL with a 3-second timeout
+              const response = await fetch(`http://${ip}/`, {
+                  method: 'GET',
+                  signal: AbortSignal.timeout(3000) 
+              });
+              
+              if (!response.ok) {
+                  throw new Error(`Server responded with status: ${response.status}`);
+              }
+              
+              // --- Connection Successful ---
+              nodeIP = ip;
+              connected = true;
+              ipDisplay.textContent = ip;
+              statusDot.classList.remove('disconnected');
+              document.getElementById('setupScreen').classList.add('hidden');
+              document.getElementById('controlScreen').classList.add('active');
+              startHeartbeat(); // Start connection polling
+
+          } catch (err) {
+              console.error('Connection failed:', err);
+              alert('Could not connect to robot. Check IP and WiFi connection.');
+          } finally {
+              connectBtn.disabled = false;
+              connectBtn.textContent = 'Connect & Start';
+          }
       }
       
       function disconnect() {
           connected = false;
           nodeIP = '';
+          clearInterval(heartbeatInterval); // --- NEW --- Stop heartbeat
           
           // Clear acceleration
           if (accelerationInterval) {
@@ -675,11 +723,15 @@
           rightMotorSpeed = 0;
           cutterOn = false;
           
-          sendCommand();
+          // Don't send command, just reset UI
           document.getElementById('setupScreen').classList.remove('hidden');
           document.getElementById('controlScreen').classList.remove('active');
           document.getElementById('cutterBtn').classList.remove('active');
           document.getElementById('cutterBtn').textContent = '⚠️ CUTTER OFF';
+
+          // --- NEW --- Reset status dot
+          ipDisplay.textContent = 'Connected'; 
+          statusDot.classList.remove('disconnected');
       }
       
       function toggleCutter() {
@@ -696,15 +748,88 @@
           sendCommand();
       }
       
+      // --- MODIFIED --- sendCommand now handles errors and has correct variables
       function sendCommand() {
         if (!connected) return;
-        const data = { leftMotor, rightMotor, power: currentPower, cutter: cutterOn?1:0 };
-        fetch(`http://${nodeIP}/control`, {      // ← keep “http:” explicit
+
+        // *** FIX 1: Use correct variable names ***
+        const data = { 
+            leftMotor: leftMotorSpeed, 
+            rightMotor: rightMotorSpeed, 
+            power: currentPower, 
+            cutter: cutterOn ? 1 : 0 
+        };
+        
+        fetch(`http://${nodeIP}/control`, {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify(data)
-        }).catch(()=>{/*silent*/});
-        }       
+        }).catch(err => {
+            // *** FIX 2: Handle send failure ***
+            console.error('Send command failed:', err);
+            handleConnectionLoss();
+        });
+      }       
+
+      // --- NEW --- Heartbeat and connection loss functions
+      function startHeartbeat() {
+          clearInterval(heartbeatInterval); // Clear any old one
+          heartbeatInterval = setInterval(checkConnection, 3000); // Check every 3 seconds
+      }
+
+      async function checkConnection() {
+          if (!connected) {
+              clearInterval(heartbeatInterval);
+              return;
+          }
+          
+          try {
+              // Ping the server. If it fails, it will throw an error.
+              await fetch(`http://${nodeIP}/`, {
+                  method: 'GET',
+                  signal: AbortSignal.timeout(2000) // 2-second timeout for pings
+              });
+              
+              // If we were disconnected and it succeeds, mark as reconnected
+              if (statusDot.classList.contains('disconnected')) {
+                  console.log('Reconnected to robot!');
+                  connected = true; // Set back to true
+                  ipDisplay.textContent = nodeIP;
+                  statusDot.classList.remove('disconnected');
+              }
+
+          } catch (err) {
+              // If ping fails, handle connection loss
+              console.log('Heartbeat failed, connection lost.');
+              handleConnectionLoss();
+          }
+      }
+
+      function handleConnectionLoss() {
+          if (!connected) return; // Only trigger once
+
+          console.log('Handling connection loss...');
+          connected = false; // Stop sendCommand from trying
+          clearInterval(heartbeatInterval); // Stop trying to ping
+          
+          // Update UI to show disconnected state
+          ipDisplay.textContent = 'Disconnected';
+          statusDot.classList.add('disconnected');
+          
+          // Stop robot by clearing acceleration interval
+          if (accelerationInterval) {
+              clearInterval(accelerationInterval);
+              accelerationInterval = null;
+          }
+          currentForward = 0;
+          currentTurn = 0;
+          // We can't send a "stop" command as the connection is lost
+          // But we can update the UI to show 0%
+          document.getElementById('leftMotor').textContent = '0%';
+          document.getElementById('rightMotor').textContent = '0%';
+          document.getElementById('speedDisplay').textContent = '0%';
+      }
+      // --- END NEW ---
       
       // Prevent accidental page navigation
       document.addEventListener('touchmove', (e) => {
@@ -716,6 +841,7 @@
           navigator.serviceWorker.register('service-worker.js')
               .then(reg => console.log('Service Worker registered'))
               .catch(err => console.log('Service Worker registration failed'));
-      }</script>
+      }
+    </script>
 </body>
 </html>
