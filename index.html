@@ -247,55 +247,85 @@
             border-top: 2px solid #000000; /* Added border */
         }
 
-        .power-control {
-            display: flex;
-            align-items: center;
-            gap: 0.5wh;
-            flex: 1;
-            max-width: 400px;
-        }
-
         .power-label {
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #86868b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             white-space: nowrap;
         }
-
+        
         .power-slider {
             flex: 1;
-            height: 9vh;
+            height: 6px;
             -webkit-appearance: none;
             appearance: none;
-            background: #eee; /* Light gray track */
-            border-radius: 2vh;
-            border: 2px solid #000; /* Black border */
+            background: #e5e5e7;
+            border-radius: 3px;
+            border: none;
             outline: none;
+            transition: background 0.2s ease;
         }
-
+        
+        .power-slider:hover {
+            background: #d2d2d7;
+        }
+        
         .power-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 9vh;
-            height: 9vh;
-            background: #000; /* Black thumb */
+            width: 24px;
+            height: 24px;
+            background: #000;
             border-radius: 50%;
             cursor: pointer;
-            /* Removed box-shadow */
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-
+        
+        .power-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .power-slider::-webkit-slider-thumb:active {
+            transform: scale(1.05);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+        
         .power-slider::-moz-range-thumb {
-            width: 20wh;
-            height: 2.5vh;
-            background: #000; /* Black thumb */
-            border-radius: 100%;
+            width: 24px;
+            height: 24px;
+            background: #000;
+            border-radius: 50%;
             cursor: pointer;
             border: none;
-            /* Removed box-shadow */
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
-
+        
+        .power-slider::-moz-range-thumb:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .power-slider::-moz-range-thumb:active {
+            transform: scale(1.05);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+        }
+        
         .power-value {
-            font-size: 20px;
-            font-weight: bold;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d1d1f;
             min-width: 50px;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        
+        .power-unit {
+            font-size: 14px;
+            font-weight: 400;
+            color: #86868b;
         }
         .cutter-btn {
             /* Converted px values to vh for scaling */
@@ -426,7 +456,7 @@
             <div class="power-control">
                 <span class="power-label">Power:</span>
                 <input type="range" class="power-slider" id="powerSlider" min="0" max="100" value="50">
-                <span class="power-value" id="powerValue">50%</span>
+                <span class="power-value"><span id="powerValue">50</span><span class="power-unit">%</span></span>
             </div>
             <button class="cutter-btn" id="cutterBtn" onclick="toggleCutter()">
                 ⚠️ CUTTER OFF
@@ -567,7 +597,7 @@
 
         powerSlider.addEventListener('input', (e) => {
             currentPower = parseInt(e.target.value);
-            powerValue.textContent = currentPower + '%';
+            powerValue.textContent = currentPower; // Remove the + '%' since it's now in separate span
             updateMotors();
         });
 
