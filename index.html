@@ -465,212 +465,266 @@
     </div>
 
     <script>
-        let connected = false;
-        let cutterOn = false;
-        let nodeIP = '';
-        let currentPower = 50;
-        let turningFactor =0.6;
-        let leftMotorSpeed = 0;
-        let rightMotorSpeed = 0;
-        
-        let forwardPressed = false;
-        let backwardPressed = false;
-        let leftPressed = false;
-        let rightPressed = false;
-
-        const buttons = {
-            forward: document.getElementById('forwardBtn'),
-            backward: document.getElementById('backwardBtn'),
-            left: document.getElementById('leftBtn'),
-            right: document.getElementById('rightBtn')
-        };
-
-        function setupButton(button, onPress, onRelease) {
-            // Touch events
-            button.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                button.classList.add('pressed');
-                onPress();
-            });
-
-            button.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                button.classList.remove('pressed');
-                onRelease();
-            });
-
-            // Mouse events for testing on desktop
-            button.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                button.classList.add('pressed');
-                onPress();
-            });
-
-            button.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                button.classList.remove('pressed');
-                onRelease();
-            });
-
-            button.addEventListener('mouseleave', (e) => {
-                button.classList.remove('pressed');
-                onRelease();
-            });
-        }
-
-        setupButton(buttons.forward, 
-            () => { forwardPressed = true; updateMotors(); },
-            () => { forwardPressed = false; updateMotors(); }
-        );
-
-        setupButton(buttons.backward,
-            () => { backwardPressed = true; updateMotors(); },
-            () => { backwardPressed = false; updateMotors(); }
-        );
-
-        setupButton(buttons.left,
-            () => { leftPressed = true; updateMotors(); },
-            () => { leftPressed = false; updateMotors(); }
-        );
-
-        setupButton(buttons.right,
-            () => { rightPressed = true; updateMotors(); },
-            () => { rightPressed = false; updateMotors(); }
-        );
-
-        function updateMotors() {
-            let forward = 0;
-            let turn = 0;
-
-            if (forwardPressed) forward = 100;
-            if (backwardPressed) forward = -100;
-            if (leftPressed) turn = -100;
-            if (rightPressed) turn = 100;
-
-            const powerMultiplier = currentPower / 100;
-            let left = 0;
-            let right = 0;
-
-            // --- Smooth differential steering ---
-            if (forward !== 0) {
-                // Moving forward or backward with optional turn
-                if (turn === 0) {
-                    left = right = forward; // straight
-                } else if (turn > 0) {
-                    // turning right
-                    left = forward;
-                    right = forward * (1 - turningFactor);
-                } else if (turn < 0) {
-                    // turning left
-                    left = forward * (1 - turningFactor);
-                    right = forward;
-                }
-            } else if (turn !== 0) {
-                // In-place turning (no forward motion)
-                left = turn;
-                right = -turn;
-            } else {
-                // stop
-                left = right = 0;
-            }
-        
-            // Apply power scaling
-            leftMotorSpeed = Math.round(left * powerMultiplier);
-            rightMotorSpeed = Math.round(right * powerMultiplier);
-        
-            // Clamp values
-            leftMotorSpeed = Math.max(-100, Math.min(100, leftMotorSpeed));
-            rightMotorSpeed = Math.max(-100, Math.min(100, rightMotorSpeed));
-        
-            // Update display
-            document.getElementById('leftMotor').textContent = leftMotorSpeed + '%';
-            document.getElementById('rightMotor').textContent = rightMotorSpeed + '%';
-        
-            const avgSpeed = Math.abs(Math.round((leftMotorSpeed + rightMotorSpeed) / 2));
-            document.getElementById('speedDisplay').textContent = avgSpeed + '%';
-        
-            sendCommand();
-        }
-
-        const powerSlider = document.getElementById('powerSlider');
-        const powerValue = document.getElementById('powerValue');
-
-        powerSlider.addEventListener('input', (e) => {
-            currentPower = parseInt(e.target.value);
-            powerValue.textContent = currentPower; // Remove the + '%' since it's now in separate span
-            updateMotors();
-        });
-
-        function connect() {
-            const ip = document.getElementById('ipInput').value.trim();
-            if (!ip) {
-                alert('Please enter an IP address');
-                return;
-            }
-            nodeIP = ip;
-            connected = true;
-            document.getElementById('ipDisplay').textContent = ip;
-            document.getElementById('setupScreen').classList.add('hidden');
-            document.getElementById('controlScreen').classList.add('active');
-        }
-
-        function disconnect() {
-            connected = false;
-            nodeIP = '';
-            leftMotorSpeed = 0;
-            rightMotorSpeed = 0;
-            cutterOn = false;
-            sendCommand();
-            document.getElementById('setupScreen').classList.remove('hidden');
-            document.getElementById('controlScreen').classList.remove('active');
-            document.getElementById('cutterBtn').classList.remove('active');
-            document.getElementById('cutterBtn').textContent = '⚠️ CUTTER OFF';
-        }
-
-        function toggleCutter() {
-            if (!connected) return;
-            cutterOn = !cutterOn;
-            const btn = document.getElementById('cutterBtn');
-            if (cutterOn) {
-                btn.classList.add('active');
-                btn.textContent = '⚠️ CUTTER ON';
-            } else {
-                btn.classList.remove('active');
-                btn.textContent = '⚠️ CUTTER OFF';
-            }
-            sendCommand();
-        }
-
-        function sendCommand() {
-            if (!connected) return;
-            
-            const data = {
-                leftMotor: leftMotorSpeed,
-                rightMotor: rightMotorSpeed,
-                power: currentPower,
-                cutter: cutterOn ? 1 : 0
-            };
-            
-            fetch(`http://${nodeIP}/control`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(data)
-            }).catch(err => console.log('Error:', err));
-        }
-
-        // Prevent accidental page navigation
-        document.addEventListener('touchmove', (e) => {
-            if (connected) e.preventDefault();
-        }, { passive: false });
-
-        // Register service worker for PWA
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('service-worker.js')
-                .then(reg => console.log('Service Worker registered'))
-                .catch(err => console.log('Service Worker registration failed'));
-        }
-    </script>
+      let connected = false;
+      let cutterOn = false;
+      let nodeIP = '';
+      let currentPower = 50;
+      let turningFactor = 0.6;
+      let leftMotorSpeed = 0;
+      let rightMotorSpeed = 0;
+          
+      let forwardPressed = false;
+      let backwardPressed = false;
+      let leftPressed = false;
+      let rightPressed = false;
+          
+      // Acceleration variables
+      let currentForward = 0; // Current acceleration level (-100 to 100)
+      let currentTurn = 0; // Current turn level (-100 to 100)
+      let accelerationRate = 3; // How fast to accelerate (units per frame)
+      let decelerationRate = 5; // How fast to decelerate (units per frame)
+      let accelerationInterval = null;
+          
+      const buttons = {
+          forward: document.getElementById('forwardBtn'),
+          backward: document.getElementById('backwardBtn'),
+          left: document.getElementById('leftBtn'),
+          right: document.getElementById('rightBtn')
+      };
+      
+      function setupButton(button, onPress, onRelease) {
+          // Touch events
+          button.addEventListener('touchstart', (e) => {
+              e.preventDefault();
+              button.classList.add('pressed');
+              onPress();
+          });
+      
+          button.addEventListener('touchend', (e) => {
+              e.preventDefault();
+              button.classList.remove('pressed');
+              onRelease();
+          });
+      
+          // Mouse events for testing on desktop
+          button.addEventListener('mousedown', (e) => {
+              e.preventDefault();
+              button.classList.add('pressed');
+              onPress();
+          });
+      
+          button.addEventListener('mouseup', (e) => {
+              e.preventDefault();
+              button.classList.remove('pressed');
+              onRelease();
+          });
+      
+          button.addEventListener('mouseleave', (e) => {
+              button.classList.remove('pressed');
+              onRelease();
+          });
+      }
+      
+      setupButton(buttons.forward, 
+          () => { forwardPressed = true; startAcceleration(); },
+          () => { forwardPressed = false; startAcceleration(); }
+      );
+      
+      setupButton(buttons.backward,
+          () => { backwardPressed = true; startAcceleration(); },
+          () => { backwardPressed = false; startAcceleration(); }
+      );
+      
+      setupButton(buttons.left,
+          () => { leftPressed = true; startAcceleration(); },
+          () => { leftPressed = false; startAcceleration(); }
+      );
+      
+      setupButton(buttons.right,
+          () => { rightPressed = true; startAcceleration(); },
+          () => { rightPressed = false; startAcceleration(); }
+      );
+      
+      function startAcceleration() {
+          // Clear existing interval if any
+          if (accelerationInterval) {
+              clearInterval(accelerationInterval);
+          }
+          
+          // Start acceleration loop
+          accelerationInterval = setInterval(() => {
+              updateAcceleration();
+          }, 50); // Update every 50ms (20 times per second)
+      }
+      
+      function updateAcceleration() {
+          // Determine target forward speed
+          let targetForward = 0;
+          if (forwardPressed) targetForward = 100;
+          if (backwardPressed) targetForward = -100;
+          
+          // Determine target turn speed
+          let targetTurn = 0;
+          if (leftPressed) targetTurn = -100;
+          if (rightPressed) targetTurn = 100;
+          
+          // Gradually move current values toward targets
+          if (currentForward < targetForward) {
+              currentForward = Math.min(currentForward + accelerationRate, targetForward);
+          } else if (currentForward > targetForward) {
+              currentForward = Math.max(currentForward - decelerationRate, targetForward);
+          }
+          
+          if (currentTurn < targetTurn) {
+              currentTurn = Math.min(currentTurn + accelerationRate, targetTurn);
+          } else if (currentTurn > targetTurn) {
+              currentTurn = Math.max(currentTurn - decelerationRate, targetTurn);
+          }
+          
+          // Update motors with current acceleration values
+          updateMotors();
+          
+          // Stop interval if we've reached target and no buttons pressed
+          if (currentForward === targetForward && currentTurn === targetTurn && 
+              !forwardPressed && !backwardPressed && !leftPressed && !rightPressed) {
+              clearInterval(accelerationInterval);
+              accelerationInterval = null;
+          }
+      }
+      
+      function updateMotors() {
+          const powerMultiplier = currentPower / 100;
+          let left = 0;
+          let right = 0;
+      
+          // --- Smooth differential steering with gradual acceleration ---
+          if (currentForward !== 0) {
+              // Moving forward or backward with optional turn
+              if (currentTurn === 0) {
+                  left = right = currentForward; // straight
+              } else if (currentTurn > 0) {
+                  // turning right
+                  left = currentForward;
+                  right = currentForward * (1 - turningFactor * (Math.abs(currentTurn) / 100));
+              } else if (currentTurn < 0) {
+                  // turning left
+                  left = currentForward * (1 - turningFactor * (Math.abs(currentTurn) / 100));
+                  right = currentForward;
+              }
+          } else if (currentTurn !== 0) {
+              // In-place turning (no forward motion)
+              left = currentTurn;
+              right = -currentTurn;
+          } else {
+              // stop
+              left = right = 0;
+          }
+      
+          // Apply power scaling
+          leftMotorSpeed = Math.round(left * powerMultiplier);
+          rightMotorSpeed = Math.round(right * powerMultiplier);
+      
+          // Clamp values
+          leftMotorSpeed = Math.max(-100, Math.min(100, leftMotorSpeed));
+          rightMotorSpeed = Math.max(-100, Math.min(100, rightMotorSpeed));
+      
+          // Update display
+          document.getElementById('leftMotor').textContent = leftMotorSpeed + '%';
+          document.getElementById('rightMotor').textContent = rightMotorSpeed + '%';
+      
+          const avgSpeed = Math.abs(Math.round((leftMotorSpeed + rightMotorSpeed) / 2));
+          document.getElementById('speedDisplay').textContent = avgSpeed + '%';
+      
+          sendCommand();
+      }
+      
+      const powerSlider = document.getElementById('powerSlider');
+      const powerValue = document.getElementById('powerValue');
+      
+      powerSlider.addEventListener('input', (e) => {
+          currentPower = parseInt(e.target.value);
+          powerValue.textContent = currentPower;
+          updateMotors();
+      });
+      
+      function connect() {
+          const ip = document.getElementById('ipInput').value.trim();
+          if (!ip) {
+              alert('Please enter an IP address');
+              return;
+          }
+          nodeIP = ip;
+          connected = true;
+          document.getElementById('ipDisplay').textContent = ip;
+          document.getElementById('setupScreen').classList.add('hidden');
+          document.getElementById('controlScreen').classList.add('active');
+      }
+      
+      function disconnect() {
+          connected = false;
+          nodeIP = '';
+          
+          // Clear acceleration
+          if (accelerationInterval) {
+              clearInterval(accelerationInterval);
+              accelerationInterval = null;
+          }
+          currentForward = 0;
+          currentTurn = 0;
+          leftMotorSpeed = 0;
+          rightMotorSpeed = 0;
+          cutterOn = false;
+          
+          sendCommand();
+          document.getElementById('setupScreen').classList.remove('hidden');
+          document.getElementById('controlScreen').classList.remove('active');
+          document.getElementById('cutterBtn').classList.remove('active');
+          document.getElementById('cutterBtn').textContent = '⚠️ CUTTER OFF';
+      }
+      
+      function toggleCutter() {
+          if (!connected) return;
+          cutterOn = !cutterOn;
+          const btn = document.getElementById('cutterBtn');
+          if (cutterOn) {
+              btn.classList.add('active');
+              btn.textContent = '⚠️ CUTTER ON';
+          } else {
+              btn.classList.remove('active');
+              btn.textContent = '⚠️ CUTTER OFF';
+          }
+          sendCommand();
+      }
+      
+      function sendCommand() {
+          if (!connected) return;
+          
+          const data = {
+              leftMotor: leftMotorSpeed,
+              rightMotor: rightMotorSpeed,
+              power: currentPower,
+              cutter: cutterOn ? 1 : 0
+          };
+          
+          fetch(`http://${nodeIP}/control`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(data)
+          }).catch(err => console.log('Error:', err));
+      }
+      
+      // Prevent accidental page navigation
+      document.addEventListener('touchmove', (e) => {
+          if (connected) e.preventDefault();
+      }, { passive: false });
+      
+      // Register service worker for PWA
+      if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.register('service-worker.js')
+              .then(reg => console.log('Service Worker registered'))
+              .catch(err => console.log('Service Worker registration failed'));
+      }</script>
 </body>
 </html>
