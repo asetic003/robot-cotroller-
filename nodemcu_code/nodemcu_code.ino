@@ -26,15 +26,14 @@ int powerLimit = 50;
 bool cutterState = false;
 
 void startCaptivePortal() {
-// 1. DNS hijack: every name → 192.168.4.1
-dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
-// 2. HTTP hijack: every unknown URI → /welcome
-server.onNotFound( {
-server.sendHeader("Location", "http://192.168.4.1/", true);
-server.send(302, "text/plain", "");
-});
-// 3. landing page
-server.on("/welcome", HTTP_GET, handleRoot);   // reuse your existing page
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+
+  server.onNotFound([]() {                              // <-- []()  is required
+    server.sendHeader("Location", "http://192.168.4.1/welcome", true);
+    server.send(302, "text/plain", "");
+  });
+
+  server.on("/welcome", HTTP_GET, handleRoot);
 }
 
 void setup() {
