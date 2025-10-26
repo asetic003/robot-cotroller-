@@ -1,11 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
+#include <DNSServer.h>
 
 // Create Access Point (NodeMCU becomes WiFi hotspot)
 const char* ap_ssid = "Robot-WiFi";
 const char* ap_password = "12345678";
-
+DNSServer dnsServer;          // answers * -> 192.168.4.1
+const byte DNS_PORT = 53;
 // Create web server
 ESP8266WebServer server(80);
 
@@ -22,6 +24,18 @@ int leftSpeed = 0;
 int rightSpeed = 0;
 int powerLimit = 50;
 bool cutterState = false;
+
+void startCaptivePortal() {
+// 1. DNS hijack: every name → 192.168.4.1
+dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+// 2. HTTP hijack: every unknown URI → /welcome
+server.onNotFound( {
+server.sendHeader("Location", "http://192.168.4.1/", true);
+server.send(302, "text/plain", "");
+});
+// 3. landing page
+server.on("/welcome", HTTP_GET, handleRoot);   // reuse your existing page
+}
 
 void setup() {
   Serial.begin(115200);
@@ -60,11 +74,13 @@ void setup() {
   
   server.begin();
   Serial.println("HTTP server started");
+  startCaptivePortal();  
   Serial.println("========================");
   Serial.println("Enter this IP in web app: " + IP.toString());
 }
 
 void loop() {
+  dnsServer.processNextRequest(); 
   server.handleClient();
 }
 
