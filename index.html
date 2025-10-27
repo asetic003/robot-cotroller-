@@ -22,7 +22,7 @@
         }
 
         body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-family: system-ui, Segoe UI, Roboto, Helvetica, Arial;
             background: #fff;
             height: 100vh;
             display: flex;
@@ -172,11 +172,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform .1s, background .1s, color .1s;
+            transition: transform .1s;
             user-select: none;
         }
 
-        .control-btn.pressed {
+        .control-btn.pressed, .control-btn:active {
             background: #000;
             color: #fff;
             transform: scale(.95);
@@ -370,6 +370,10 @@
             ui.connectBtn.disabled = true;
             ui.connectBtn.textContent = 'Connecting...';
 
+            // Immediately show the control screen
+            ui.setupScreen.classList.add('hidden');
+            ui.controlScreen.classList.remove('hidden');
+
             try {
                 await fetch(`http://${ip}/`, { signal: AbortSignal.timeout(3000) });
                 
@@ -378,14 +382,14 @@
                 ui.ipDisplay.textContent = ip;
                 ui.statusDot.classList.remove('disconnected');
                 
-                ui.setupScreen.classList.add('hidden');
-                ui.controlScreen.classList.remove('hidden');
-                
                 startHeartbeat();
                 startControlLoop();
 
             } catch (err) {
-                alert('Could not connect to robot. Check IP and WiFi connection.');
+                nodeIP = ip; // Still set the IP
+                connected = false;
+                ui.ipDisplay.textContent = 'Disconnected';
+                ui.statusDot.classList.add('disconnected');
             } finally {
                 ui.connectBtn.disabled = false;
                 ui.connectBtn.textContent = 'Connect & Start';
@@ -405,12 +409,14 @@
             cutterOn = false;
             
             // Reset UI
-            ui.setupScreen.classList.remove('hidden');
-            ui.controlScreen.classList.add('hidden');
             ui.cutterBtn.classList.remove('active');
             ui.cutterBtn.textContent = 'Cutter OFF';
             ui.ipDisplay.textContent = 'Ready';
             ui.statusDot.classList.remove('disconnected');
+
+            // Show setup screen
+            ui.setupScreen.classList.remove('hidden');
+            ui.controlScreen.classList.add('hidden');
         }
 
         // --- HEARTBEAT ---
